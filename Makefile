@@ -1,11 +1,11 @@
-.PHONY: main
-main: main.o
-	./main.o
+.PHONY: encode
+encode: encode.o
+	./encode.o
 
-main.o: main.c
+encode.o: encode.c
 	clang \
-		main.c \
+		encode.c \
 		-I/opt/cuda/include \
 		-lnvidia-encode \
 		-lcuda \
-		-o main.o
+		-o encode.o
