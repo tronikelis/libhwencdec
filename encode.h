@@ -1,7 +1,9 @@
+#ifndef LIBHWENCDEC_INCLUDE_ENCODER_H
+#define LIBHWENCDEC_INCLUDE_ENCODER_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <cuda.h>
@@ -26,6 +28,22 @@ typedef struct _EncodedFrame {
     void* data;
     uint32_t len;
 } EncodedFrame;
+
+void EncodedFrame_new(EncodedFrame* self, void* data, uint32_t len);
+void EncodedFrame_destroy(EncodedFrame self);
+
+void NvEncodeSession_print_last_error(NvEncodeSession* self);
+int NvEncodeSession_destroy(NvEncodeSession self);
+int NvEncodeSession_encode_frame(NvEncodeSession* self, void* frame_input,
+                                 EncodedFrame* out_encoded_frame);
+int NvEncodeSession_init_h264(NvEncodeSession* self,
+                              NV_ENC_BUFFER_FORMAT* wanted_formats,
+                              int wanted_formats_len,
+                              NV_ENC_BUFFER_FORMAT* out_selected_format);
+int NvEncodeSession_new(NvEncodeSession* self, uint32_t width, uint32_t height,
+                        uint32_t framerate_num, uint32_t framerate_den);
+
+#ifdef LIBHWENCDEC_ENCODER_IMPLEMENTATION
 
 void EncodedFrame_new(EncodedFrame* self, void* data, uint32_t len) {
     EncodedFrame _tmp = {0};
@@ -276,11 +294,6 @@ int NvEncodeSession_new(NvEncodeSession* self, uint32_t width, uint32_t height,
 
     CUcontext cu_context;
     CUresult cu_result;
-    cu_result = cuInit(0);
-    if (cu_result != 0) {
-        printf("failed cuInit: %d\n", cu_result);
-        return 1;
-    }
     cu_result = cuCtxCreate(&cu_context, NULL, 0, 0);
     if (cu_result != 0) {
         printf("failed creating cuda context: %d\n", cu_result);
@@ -307,44 +320,5 @@ int NvEncodeSession_new(NvEncodeSession* self, uint32_t width, uint32_t height,
     return 0;
 }
 
-int main() {
-    NvEncodeSession nv_encode_session;
-    NVENCSTATUS nv_status;
-    nv_status = NvEncodeSession_new(&nv_encode_session, 1920, 1080, 30, 1);
-    if (nv_status != 0) {
-        NvEncodeSession_print_last_error(&nv_encode_session);
-        return 1;
-    }
-
-    NV_ENC_BUFFER_FORMAT buffer_format = NV_ENC_BUFFER_FORMAT_ARGB;
-    NV_ENC_BUFFER_FORMAT out_buffer_format;
-    nv_status = NvEncodeSession_init_h264(&nv_encode_session, &buffer_format, 1,
-                                          &out_buffer_format);
-    if (nv_status != 0) {
-        printf("failed to init h264\n");
-        return 1;
-    }
-
-    EncodedFrame encoded_frame;
-    uint32_t input_len = 1920 * 1080 * 4;
-    void* input_data = malloc(input_len);
-    memset(input_data, 0, input_len);
-    nv_status = NvEncodeSession_encode_frame(&nv_encode_session, input_data,
-                                             &encoded_frame);
-    if (nv_status != 0) {
-        printf("failed to encode frame\n");
-        return 1;
-    }
-
-    printf("encoded_frame_len: %d\n", encoded_frame.len);
-
-    fwrite(encoded_frame.data, 1, encoded_frame.len, stderr);
-
-    if (NvEncodeSession_destroy(nv_encode_session) != 0) {
-        printf("failed to destroy\n");
-        return 1;
-    }
-    EncodedFrame_destroy(encoded_frame);
-
-    return 0;
-}
+#endif
+#endif

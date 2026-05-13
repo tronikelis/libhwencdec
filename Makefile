@@ -1,11 +1,13 @@
-.PHONY: encode
-encode: encode.o
-	./encode.o
+.PHONY: run_test
+run_test: run_test.o
+	./run_test.o
 
-encode.o: encode.c
+run_test.o: run_test.c encode.h decode.h
 	clang \
-		encode.c \
+		run_test.c \
 		-I/opt/cuda/include \
 		-lnvidia-encode \
 		-lcuda \
-		-o encode.o
+		-lnvcuvid \
+		-o run_test.o
+
