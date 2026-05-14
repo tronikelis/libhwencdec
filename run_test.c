@@ -45,11 +45,16 @@ int main() {
         return 1;
     }
 
-    if (NvDecodeSession_parse_video_data(&nv_decode_session, encoded_frame.data, encoded_frame.len) != 0) {
-        printf("parse_video_data failed\n");
+    DecodedFrame decoded_frame;
+    if (NvDecodeSession_decode_frame(&nv_decode_session, encoded_frame.data,
+                                     encoded_frame.len, &decoded_frame) != 0) {
+        printf("decode_frame failed\n");
         return 1;
     }
 
-    printf("EXITED!!!\n");
+    printf("decoded_frame data: %p\n", decoded_frame.data);
+    printf("*decoded_frame data: %u\n", *(uint8_t*)(decoded_frame.data + 10));
+
+    printf("EXITED!!!");
     return 0;
 }
